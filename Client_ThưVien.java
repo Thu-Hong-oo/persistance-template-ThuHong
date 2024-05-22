@@ -22,16 +22,15 @@ public class ThuVienClient {
 
 				int choice = 0;
 
-				while (choice != -1) {
+				while (true) {
 					System.out.println("Enter your choice: \n" + "1. Insert new ChiTietMuonSach: \n"
-							+ "2. Update Sach: \n" + "3. Find all DocGia have borrow Sach greater and equal 2 \n-1. Exit");
+							+ "2. Update Sach: \n" + "3. Find all DocGia have borrow Sach greater and equal 2 \n");
 					choice = sc.nextInt();
 					out.writeInt(choice);
 					out.flush();
 
 					switch (choice) {
-					case -1:
-						break;
+				
 					case 1:
 						sc.nextLine();
 						System.out.println("Enter DocGia ID");
