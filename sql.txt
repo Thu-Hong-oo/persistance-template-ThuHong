@@ -1,0 +1,131 @@
+-- Tổng số lương cho mỗi phòng ban
+SELECT department_id, SUM(salary) AS total_salary
+FROM employees
+GROUP BY department_id;
+-- Số thứ tự của nhân viên trong mỗi phòng ban dựa trên lương
+SELECT employee_id, department_id, salary,
+       ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC) AS rank
+FROM employees;
+
+-- Ghép nối tên và họ của nhân viên thành một chuỗi
+SELECT CONCAT(first_name, ' ', last_name) AS full_name
+FROM employees;
+-- Danh sách nhân viên có lương cao hơn mức lương trung bình của công ty
+SELECT employee_id, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+
+-- Danh sách nhân viên đã làm việc ít nhất 5 năm
+SELECT employee_id, hire_date
+FROM employees
+WHERE DATEDIFF(year, hire_date, GETDATE()) >= 5;
+
+-- Truy vấn cây phân cấp quản lý nhân viên (trong PostgreSQL)
+WITH RECURSIVE EmployeeHierarchy AS (
+    SELECT employee_id, manager_id, 1 AS level
+    FROM employees
+    WHERE manager_id IS NULL
+    UNION ALL
+    SELECT e.employee_id, e.manager_id, eh.level + 1
+    FROM employees e
+    INNER JOIN EmployeeHierarchy eh ON e.manager_id = eh.employee_id
+)
+SELECT employee_id, manager_id, level
+FROM EmployeeHierarchy;
+
+SELECT *
+FROM employees
+WHERE salary > ANY (SELECT salary FROM employees WHERE department_id = 10);
+
+SELECT *
+FROM employees
+WHERE salary > ALL (SELECT salary FROM employees WHERE department_id = 10);
+
+--Tìm danh sách sản phẩm có giá cao nhất
+SELECT *
+FROM products
+WHERE price = (SELECT MAX(price) FROM products);
+
+2. Tìm danh sách sản phẩm chưa bán được lần nào
+sql
+Copy code
+SELECT p.*
+FROM products p
+LEFT JOIN order_details od ON p.product_id = od.product_id
+WHERE od.product_id IS NULL;
+3. Thống kê số khách hàng theo từng bang
+java
+Copy code
+public Map<String, Integer> getNumberCustomerByState() {
+    String query = "SELECT state, COUNT(*) AS customer_count " +
+                   "FROM customers " +
+                   "GROUP BY state";
+    List<Object[]> results = entityManager.createQuery(query).getResultList();
+    Map<String, Integer> map = new HashMap<>();
+    for (Object[] result : results) {
+        String state = (String) result[0];
+        Integer count = ((Number) result[1]).intValue();
+        map.put(state, count);
+    }
+    return map;
+}
+4. Tính tổng tiền của đơn hàng khi biết mã số đơn hàng
+sql
+Copy code
+SELECT SUM(od.quantity * od.price) AS total_amount
+FROM order_details od
+WHERE od.order_id = :orderId;
+5. Đếm số đơn hàng của từng khách hàng
+java
+Copy code
+public Map<Customer, Integer> getOrdersByCustomers() {
+    String query = "SELECT c, COUNT(o.order_id) AS order_count " +
+                   "FROM customers c " +
+                   "JOIN orders o ON c.customer_id = o.customer_id " +
+                   "GROUP BY c";
+    List<Object[]> results = entityManager.createQuery(query).getResultList();
+    Map<Customer, Integer> map = new HashMap<>();
+    for (Object[] result : results) {
+        Customer customer = (Customer) result[0];
+        Integer count = ((Number) result[1]).intValue();
+        map.put(customer, count);
+    }
+    return map;
+}
+6. Tính tổng số lượng của từng sản phẩm đã bán ra
+java
+Copy code
+public Map<Product, Integer> getTotalProduct() {
+    String query = "SELECT p, SUM(od.quantity) AS total_quantity " +
+                   "FROM products p " +
+                   "JOIN order_details od ON p.product_id = od.product_id " +
+                   "GROUP BY p";
+    List<Object[]> results = entityManager.createQuery(query).getResultList();
+    Map<Product, Integer> map = new HashMap<>();
+    for (Object[] result : results) {
+        Product product = (Product) result[0];
+        Integer quantity = ((Number) result[1]).intValue();
+        map.put(product, quantity);
+    }
+    return map;
+}
+7. Tính tổng tiền của tất cả các hóa đơn trong một ngày nào đó
+sql
+Copy code
+SELECT SUM(od.quantity * od.price) AS total_amount
+FROM orders o
+JOIN order_details od ON o.order_id = od.order_id
+WHERE DATE(o.order_date) = :specificDate;
+8. Xóa tất cả các khách hàng chưa mua hàng
+sql
+Copy code
+DELETE FROM customers
+WHERE customer_id NOT IN (SELECT DISTINCT customer_id FROM orders);
+9. Thống kê tổng tiền hóa đơn theo tháng / năm
+sql
+Copy code
+SELECT YEAR(o.order_date) AS year, MONTH(o.order_date) AS month, SUM(od.quantity * od.price) AS total_amount
+FROM orders o
+JOIN order_details od ON o.order_id = od.order_id
+GROUP BY YEAR(o.order_date), MONTH(o.order_date)
+ORDER BY YEAR(o.order_date), MONTH(o.order_date);
